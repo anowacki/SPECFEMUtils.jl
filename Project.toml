@@ -1,0 +1,8 @@
+name = "SPECFEMUtils"
+uuid = "9820f9ae-28f8-57e8-929a-ac5cf2965889"
+authors = ["Andy Nowacki <a.nowacki@leeds.ac.uk>"]
+version = "0.1.0"
+
+[deps]
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+MomentTensors = "7bb32750-d21c-11e8-1ebc-09158bc70490"
