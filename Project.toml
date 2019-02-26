@@ -4,5 +4,7 @@ authors = ["Andy Nowacki <a.nowacki@leeds.ac.uk>"]
 version = "0.1.0"
 
 [deps]
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 MomentTensors = "7bb32750-d21c-11e8-1ebc-09158bc70490"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"

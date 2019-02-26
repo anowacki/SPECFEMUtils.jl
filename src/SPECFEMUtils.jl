@@ -6,7 +6,10 @@ with the SPECFEM3D_GLOBE software.
 """
 module SPECFEMUtils
 
-import DelimitedFiles: readdlm
+import DelimitedFiles: readdlm, writedlm
+import Printf
+
+import DataStructures
 
 import MomentTensors: MT
 
@@ -41,6 +44,29 @@ function read_cmtsolution(file)
 end
 
 """
+    write_cmtsolution(file, cmt)
+    
+Write a `CMTSolution` structure `cmt` to file in SPECFEM CMTSOLUTION format.
+"""
+function write_cmtsolution(file, cmt)
+    open(file, "w") do f
+        println(f, cmt.desc)
+        println(f, "event name:     ", cmt.name)
+        println(f, "time shift:     ", cmt.tshift)
+        println(f, "half duration:  ", cmt.halfdur)
+        println(f, "latitude:       ", cmt.lat)
+        println(f, "longitude:      ", cmt.lon)
+        println(f, "depth:          ", cmt.dep)
+        println(f, "Mrr:            ", cmt.mt[:rr])
+        println(f, "Mtt:            ", cmt.mt[:tt])
+        println(f, "Mpp:            ", cmt.mt[:pp])
+        println(f, "Mrt:            ", cmt.mt[:rt])
+        println(f, "Mrp:            ", cmt.mt[:rp])
+        println(f, "Mtp:            ", cmt.mt[:tp])
+    end
+end
+
+"""
     read_stations(file) -> stations
 
 Read in a STATIONS file and return a named tuple containing vectors of the station parameters.
@@ -51,12 +77,26 @@ function read_stations(file)
 end
 
 """
+    write_stations(file, sta, net, lat, lon, elev, dep)
+    write_stations(file, stations)
+    
+Write a set of seismic stations to `file` in SPECFEM format, either using a set of
+arrays of the same length, or a named tuple containing these arrays.
+"""
+function write_stations(file, sta, net, lat, lon, elev, dep)
+    all(x->length(x)==length(sta), (net, lat, lon, elev, dep)) ||
+        throw(ArgumentError("all arrays must be the same length"))
+    writedlm(file, [sta net lat lon elev dep], "  ")
+end
+write_stations(file, s) = write_stations(file, s.sta, s.net, s.lat, s.lon, s.elev, s.dep)
+
+"""
     read_par_file(file) -> parameters
     
 Read in a Par_file and return a dictionary `parameters` of the values present.
 """
 function read_par_file(file)
-    params = Dict{String,Any}()
+    params = DataStructures.OrderedDict{String,Any}()
     for (i, line) in enumerate(readlines(file))
         length(replace(line, r"\s"=>"")) > 0 || continue
         # Skip comment lines
@@ -78,6 +118,33 @@ function read_par_file(file)
         params[key] = value
     end
     params
+end
+
+"""
+    write_par_file(file, params)
+    
+Write the values in the `Dict` `params` to `file` in SPECFEM Par_file format.
+"""
+function write_par_file(file, params)
+    open(file, "w") do f
+        for (k, v) in params
+            T = typeof(v)
+            if v isa Integer
+                Printf.@printf(f, "%-31s = %i\n", k, v)
+            elseif v isa Real
+                # Convert to Fortran double precision format
+                val_string = replace(Printf.@sprintf("%e", v), "e"=>"d")
+                Printf.@printf(f, "%-31s = %s\n", k, val_string)
+            elseif v isa Bool
+                val_string = v ? ".true." : ".false."
+                Printf.@printf(f, "%-31s = %s\n", k, val_string)
+            elseif v isa AbstractString
+                Printf.@printf(f, "%-31s = %s\n", k, strip(v))
+            else
+                error("Unexpected type of value $v for key \"$k\"")
+            end
+        end
+    end
 end
 
 end # module
